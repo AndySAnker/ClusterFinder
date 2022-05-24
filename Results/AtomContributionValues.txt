@@ -1,0 +1,26 @@
+
+Atom contribution are calculated to: 
+Atom # 1:  0.0  Colorcode:  #fee838
+Atom # 2:  0.9920379218654521  Colorcode:  #002451
+Atom # 3:  0.02659814690367835  Colorcode:  #fbe138
+Atom # 4:  1.0  Colorcode:  #00224e
+Atom # 5:  0.03951599967188289  Colorcode:  #f6dd3f
+Atom # 6:  0.9570161418760258  Colorcode:  #002a61
+Atom # 7:  0.0  Colorcode:  #fee838
+Atom # 8:  0.9920379218654521  Colorcode:  #002451
+Atom # 9:  0.02659814690367835  Colorcode:  #fbe138
+Atom # 10:  1.0  Colorcode:  #00224e
+Atom # 11:  0.03951599967188289  Colorcode:  #f6dd3f
+Atom # 12:  0.9570161418760258  Colorcode:  #002a61
+Atom # 13:  0.0  Colorcode:  #fee838
+Atom # 14:  0.9920379218654521  Colorcode:  #002451
+Atom # 15:  0.02659814690367835  Colorcode:  #fbe138
+Atom # 16:  1.0  Colorcode:  #00224e
+Atom # 17:  0.03951599967188289  Colorcode:  #f6dd3f
+Atom # 18:  0.9570161418760258  Colorcode:  #002a61
+Atom # 19:  0.0  Colorcode:  #fee838
+Atom # 20:  0.9920379218654521  Colorcode:  #002451
+Atom # 21:  0.02659814690367835  Colorcode:  #fbe138
+Atom # 22:  1.0  Colorcode:  #00224e
+Atom # 23:  0.03951599967188289  Colorcode:  #f6dd3f
+Atom # 24:  0.9570161418760258  Colorcode:  #002a61

@@ -1,0 +1,75 @@
+
+#(C) 2022 by FIZ Karlsruhe - Leibniz Institute for Information Infrastructure.  All rights reserved.
+data_35643-ICSD
+_database_code_ICSD 35643
+_audit_creation_date 1983-12-31
+_audit_update_record 2019-02-01
+_chemical_name_common 'Iron(III) oxide (21.33/32) - gamma'
+_chemical_formula_structural 'Fe21.333 O32'
+_chemical_formula_sum 'Fe21.333 O32'
+_exptl_crystal_density_diffrn 4.89
+_diffrn_ambient_temperature 4.
+_citation_title
+
+;
+A powder neutron diffraction investigation of vacancy ordering and covalence
+in gamma-Fe2O3
+;
+loop_
+_citation_id
+_citation_journal_full
+_citation_year
+_citation_journal_volume
+_citation_page_first
+_citation_page_last
+_citation_journal_id_ASTM
+primary 'Journal of Solid State Chemistry' 1983 49 325 333 JSSCBI
+loop_
+_citation_author_citation_id
+_citation_author_name
+primary 'Greaves, C.'
+_cell_length_a 8.3396(4)
+_cell_length_b 8.3396(4)
+_cell_length_c 8.3220(7)
+_cell_angle_alpha 90.
+_cell_angle_beta 90.
+_cell_angle_gamma 90.
+_cell_volume 578.79
+_cell_formula_units_Z 1
+_space_group_name_H-M_alt 'P 43 21 2'
+_space_group_IT_number 96
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x+1/2, -y+1/2, -z+1/4'
+2 '-x+1/2, y+1/2, -z+3/4'
+3 '-y, -x, -z+1/2'
+4 'y, x, -z'
+5 'y+1/2, -x+1/2, z+1/4'
+6 '-y+1/2, x+1/2, z+3/4'
+7 '-x, -y, z+1/2'
+8 'x, y, z'
+loop_
+_atom_type_symbol
+_atom_type_oxidation_number
+Fe3+ 3
+O2- -2
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_B_iso_or_equiv
+_atom_site_occupancy
+Fe1 Fe3+ 8 b 0.744(3) 0.996(3) 0.120(2) 0.1 1.
+Fe2 Fe3+ 4 a 0.620(2) 0.620(2) 0 0.1 1.
+Fe3 Fe3+ 8 b 0.364(2) 0.867(2) -.016(2) 0.1 1.
+Fe4 Fe3+ 4 a 0.140(4) 0.140(4) 0 0.1 0.333
+O1 O2- 8 b 0.615(4) 0.869(4) -.014(4) 0.1 1.
+O2 O2- 8 b 0.119(4) 0.377(4) -.005(4) 0.1 1.
+O3 O2- 8 b 0.137(4) 0.861(3) 0.007(4) 0.1 1.
+O4 O2- 8 b 0.383(4) 0.631(3) -.003(3) 0.1 1.
+#End of TTdata_35643-ICSD
