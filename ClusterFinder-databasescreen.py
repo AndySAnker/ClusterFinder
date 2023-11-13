@@ -1,14 +1,12 @@
 import numpy as np
 import multiprocessing as mp
 from operator import itemgetter
-import time, glob, pdb, tqdm, os, shutil
+import time, glob, tqdm, os, shutil
 import matplotlib as mpl
-import matplotlib.cm
 from itertools import repeat
 from diffpy.Structure import Structure, Atom
-from diffpy.srfit.pdf import PDFContribution, PDFParser, PDFGenerator
-from diffpy.srfit.fitbase import FitRecipe, FitResults, Profile, FitContribution
-from diffpy.srreal.pdfcalculator import DebyePDFCalculator
+from diffpy.srfit.pdf import PDFParser, PDFGenerator
+from diffpy.srfit.fitbase import FitRecipe, Profile, FitContribution
 from scipy.optimize.minpack import leastsq
 
 def structure_catalogue_maker(Number_of_atoms):
@@ -31,10 +29,10 @@ def Load_startmodel(starting_model):
     
     return elements, xyz
 
-def fitting(structure_catalogue, Experimental_Data, xyz, atom_ph, Qmin, Qmax, Qdamp, rmin, rmax, index):
+def create_cluster(structure_catalogue, xyz, atom_ph, index):
     """This function takes in a 'starting_model', and an 'index' from the 'structure_catalogue'. It generates the 
-    corresponding structure and fit it to the 'Experimental_Data'."""
-    NumMo = np.shape(structure_catalogue)[1]
+    corresponding structure."""
+
     xyz_Mo = xyz[:NumMo].copy()
     xyz_O = xyz[NumMo:len(xyz)].copy()
     keep_O = np.zeros(len(xyz_O))
@@ -59,7 +57,16 @@ def fitting(structure_catalogue, Experimental_Data, xyz, atom_ph, Qmin, Qmax, Qd
     Mo_cluster = Structure([Atom(atom_ph, xi) for xi in xyz_Mo])
     O_cluster = Structure([Atom('O', xi) for xi in xyz_O])
     cluster = Mo_cluster + O_cluster
+
+    return cluster
     
+def fitting(structure_catalogue, xyz, atom_ph, Qmin, Qmax, Qdamp, rmin, rmax, plot, index):
+    """This function takes in a 'starting_model', and an 'index' from the 'structure_catalogue'. It generates the 
+    corresponding structure and fit it to the 'Experimental_Data'."""
+
+    # Create the cluster
+    cluster = create_cluster(structure_catalogue, xyz, atom_ph, index)
+
     # Make a standard cluster refinement using Diffpy-CMI
     # Import the data and make it a PDFprofile. Define the range of the data that will be used in the fit.
     pdfprofile = Profile()
@@ -174,159 +181,110 @@ def MotEx(inputs):
 
     return XYZ_file, Rwp, Mean_AtomContributionValue, STD_AtomContributionValue
 
-def calculate_atomContributionValue(Result, saveResults):
+def calculate_atom_contribution_value(result, save_results):
     """Calculate atom contribution value list from the result array"""
     
     # Define AtomContributionValues vector
-    AtomContributionValues = Result[:,0]
+    atom_contribution_values = result[:,0]
     
     # Normalise the AtomContributionValues
-    AtomContributionValues_ph = AtomContributionValues.copy()
-    AtomContributionValues_ph.sort()
+    amin, amax = np.min(atom_contribution_values), np.max(atom_contribution_values)
+    atom_contribution_values = (atom_contribution_values - amin) / (amax - amin)
 
     # Define colormap of viridis.reverse
-    norm = mpl.colors.Normalize(vmin=AtomContributionValues_ph[round((len(AtomContributionValues))/10)], vmax=AtomContributionValues_ph[-round((len(AtomContributionValues))/10)])
-    cmap = matplotlib.cm.cividis
+    vmin = np.percentile(atom_contribution_values, 10)
+    vmax = np.percentile(atom_contribution_values, 90)
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    cmap = mpl.cm.cividis_r
     m = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
     
     # Save results to file
-    f = open(saveResults+"AtomContributionValues_MotEx.txt", "w")
-    f.write("\nAtom contribution are calculated to: \n")
-    for i in range(len(AtomContributionValues)):
-        f.write("Atom # "+ str(i+1) + ":  "+ str(AtomContributionValues[i]) + "  Colorcode:  "+ mpl.colors.rgb2hex(m.to_rgba(AtomContributionValues[i]))+"\n")
+    with open(f"{save_results}AtomContributionValues_MotEx.txt", "w") as f:
+        f.write("\nAtom contribution are calculated to: \n")
+        for i, value in enumerate(atom_contribution_values):
+            color_code = mpl.colors.rgb2hex(m.to_rgba(value))
+            f.write(f"Atom # {i+1}:  {value}  Colorcode:  {color_code}\n")
     
-    return m, AtomContributionValues
+    return m, atom_contribution_values
 
-def Make_CrystalMakerFile(NumMo, elements, xyz, AtomContributionValues, m, saveResults, threshold):
+def Make_CrystalMakerFile(elements, xyz, AtomContributionValues, m, saveResults, threshold):
     # Read bonds and colors of all atoms
     bonding = []
-    with open("Bonding.txt", 'r') as fi:
+    with open("utils/Bonding.txt", 'r') as fi:
         for line in fi.readlines():
             sep_line=line.strip('{}\n\r ').split()
             bonding.append(sep_line)
     bonding = np.array(bonding)
     
     # Output a crystalmaker file to visualize the results
-    CrystalMaker = open(saveResults+'_CrystalMaker.cmtx', 'w')
+    with open(f"{saveResults}_CrystalMaker.cmtx", 'w') as CrystalMaker:
+        CrystalMaker.write("MOLE  CrystalMaker molecule format\n")
+        CrystalMaker.write("TITL  Molecule\n\n")
+        CrystalMaker.write("! Model type\n")
+        CrystalMaker.write("MODL  1\n\n")
+        CrystalMaker.write("! Depth fading settings\n")
+        CrystalMaker.write("DCUE  1.000000 0.212899 0.704686\n\n")
+        CrystalMaker.write("! Colour definitions:\n")
+        CrystalMaker.write("TYPE\n")
 
-    CrystalMaker.write("MOLE  CrystalMaker molecule format\n")
-    CrystalMaker.write("TITL  Molecule\n\n")
-    CrystalMaker.write("! Model type\n")
-    CrystalMaker.write("MODL  1\n\n")
+        # Assign colors to all the atoms
+        for iter, element in enumerate(elements):
+            bonding_index = np.where(bonding == element)[0][0]
+            if iter < NumMo:
+                rgba = m.to_rgba(AtomContributionValues[iter])[:-1]
+                rgb = " ".join(map(str, rgba[:3]))
+            else:
+                rgb = " ".join(map(str, [int(float(bonding[bonding_index, i])*255) for i in range(2, 5)]))
+            CrystalMaker.write(f"{element}{iter+1} {bonding[bonding_index, 1]} {rgb}\n")
 
-    CrystalMaker.write("! Depth fading settings\n")
-    CrystalMaker.write("DCUE  1.000000 0.212899 0.704686\n\n")
+        CrystalMaker.write("\n! Atoms list\n! Bond Specifications\n")
 
-    CrystalMaker.write("! Colour definitions:\n")
-    CrystalMaker.write("TYPE\n")
+        # Assign bonds between the atoms
+        for iter, element in enumerate(elements):
+            if iter < NumMo:
+                NI_elements = np.delete(np.unique(elements), np.where(np.unique(elements) == element)[0])
+                for NI_element in NI_elements:
+                    CrystalMaker.write(f"BMAX {element} {NI_element}  {threshold}\n")
 
-    # Assign colors to all the atoms
-    for iter, element in enumerate(elements):
-        if iter < NumMo:
-            #CrystalMaker.write(element + str(iter+1) + " 1.32 ")
-            CrystalMaker.write(element + str(iter+1) + " " + bonding[np.where(bonding == element)[0][0], 1] + " ")
-            rgb1 = m.to_rgba(AtomContributionValues[iter])[:-1][0]
-            rgb2 = m.to_rgba(AtomContributionValues[iter])[:-1][1]
-            rgb3 = m.to_rgba(AtomContributionValues[iter])[:-1][2]
-            CrystalMaker.write(str(rgb1) + " " + str(rgb2) + " " + str(rgb3))
-            CrystalMaker.write("\n")
-        else:
-            #CrystalMaker.write(element + str(iter+1) + " 0.66 ")
-            CrystalMaker.write(element + str(iter+1) + " " + bonding[np.where(bonding == element)[0][0], 1] + " ")
-            rgb1 = int(float(bonding[np.where(bonding == element)[0][0], 2])*255) #mpl.colors.to_rgb("#FF0000")[0]
-            rgb2 = int(float(bonding[np.where(bonding == element)[0][0], 3])*255) #mpl.colors.to_rgb("#FF0000")[1]
-            rgb3 = int(float(bonding[np.where(bonding == element)[0][0], 4])*255) #mpl.colors.to_rgb("#FF0000")[2]
-            CrystalMaker.write(str(rgb1) + " " + str(rgb2) + " " + str(rgb3))
-            CrystalMaker.write("\n")
-    
-    CrystalMaker.write("\n")
-    CrystalMaker.write("! Atoms list\n")
-    CrystalMaker.write("! Bond Specifications\n")
-    
-    # Assign bonds between the atoms
-    for iter, element in enumerate(elements):
-        if iter < NumMo:
-            NI_elements = np.delete(np.unique(elements), np.where(np.unique(elements) == element)[0])
-            for NI_element in NI_elements:
-                CrystalMaker.write("BMAX " + element + " " + str(NI_element) + "  " + str(threshold))
-                CrystalMaker.write("\n")
-    
-    CrystalMaker.write("\n")
-    CrystalMaker.write("! Atoms list\n")
-    CrystalMaker.write("ATOM\n")
-    
-    # Assign coordinates to the atoms
-    for iter, element in enumerate(elements):
-        if iter < NumMo:
-            CrystalMaker.write(element + " " + element + str(iter+1) + " " + str(xyz[iter][0]) + " " + str(xyz[iter][1]) + " " + str(xyz[iter][2]) + "\n")
-        else:
-            CrystalMaker.write(element + " " + element + str(iter+1) + " " + str(xyz[iter][0]) + " " + str(xyz[iter][1]) + " " + str(xyz[iter][2]) + "\n")
+        CrystalMaker.write("\n! Atoms list\nATOM\n")
 
-    CrystalMaker.close()
-    
+        # Assign coordinates to the atoms
+        for iter, element in enumerate(elements):
+            CrystalMaker.write(f"{element} {element}{iter+1} {' '.join(map(str, xyz[iter]))}\n")
+
     return None
 
-def Make_VestaFile(NumMo, elements, xyz, AtomContributionValues, m, saveResults, threshold):
+def Make_VESTAFile(elements, xyz, AtomContributionValues, m, saveResults):
     # Read bonds and colors of all atoms
     bonding = []
-    with open("Bonding.txt", 'r') as fi:
+    with open("utils/Bonding.txt", 'r') as fi:
         for line in fi.readlines():
             sep_line=line.strip('{}\n\r ').split()
             bonding.append(sep_line)
     bonding = np.array(bonding)
-
-    # Output a Vesta file to visualize the results
-    Vesta = open(saveResults+'_Vesta.vesta', 'w')
-
-    Vesta.write("#VESTA_FORMAT_VERSION 3.5.4\n\n\n")
-    Vesta.write("MOLECULE\n\n")
-    Vesta.write("Title\n")
-    Vesta.write("XYZ file\n\n")
-
-    Vesta.write("STRUC\n")
-    # Assign coordinates to the atoms
-    for iter, element in enumerate(elements):
-        Vesta.write(str(iter+1) + " " + element + " " + element + str(iter+1) + " 1.0000 " + str(xyz[iter][0]) + " " + str(xyz[iter][1]) + " " + str(xyz[iter][2]) + "1" + " -" + "\n")
-        Vesta.write("0 0 0 0\n")
-    Vesta.write("  0 0 0 0 0 0 0\n")
-
-    Vesta.write("SBOND\n")
-    # Assign bonds between the atoms
-    unique_elements = np.unique(elements)
-    for iter, element1 in enumerate(unique_elements):
-      for iter, element2 in enumerate(unique_elements):
-        if not element1 == element2:
-          Vesta.write(str(iter+1) + " " + element1 + " " + element2 + " 0.0 " + str(threshold) + " 0 1 1 0 1 0.25 2 127 127 127\n")
-          Vesta.write("0 0 0 0\n")
     
-    Vesta.write("SITET\n")
-    # Assign colors to all the atoms
-    for iter, element in enumerate(elements):
-        if iter < NumMo:
-            rgb1 = int(m.to_rgba(AtomContributionValues[iter])[:-1][0]*255)
-            rgb2 = int(m.to_rgba(AtomContributionValues[iter])[:-1][1]*255)
-            rgb3 = int(m.to_rgba(AtomContributionValues[iter])[:-1][2]*255)
-            Vesta.write(str(iter+1) + " " + element + str(iter+1) + " " + bonding[np.where(bonding == element)[0][0], 1] + " " + str(rgb1) + " " + str(rgb2) + " " + str(rgb3) + " " + str(rgb1) + " " + str(rgb2) + " " + str(rgb3) + " 204 0\n")
-        else:
-            rgb1 = int(float(bonding[np.where(bonding == element)[0][0], 2])*255)
-            rgb2 = int(float(bonding[np.where(bonding == element)[0][0], 3])*255)
-            rgb3 = int(float(bonding[np.where(bonding == element)[0][0], 4])*255)
-            Vesta.write(str(iter+1) + " " + element + str(iter+1) + " " + bonding[np.where(bonding == element)[0][0], 1] + " " + str(rgb1) + " " + str(rgb2) + " " + str(rgb3) + " " + str(rgb1) + " " + str(rgb2) + " " + str(rgb3) + " 204 0\n")
-    Vesta.write("0 0 0 0 0 0\n")
-    
-    Vesta.write("ATOMT\n")
-    done_deal_atoms = []
-    for iter, element in enumerate(elements):
-      if element not in done_deal_atoms:
-        rgb1 = int(float(bonding[np.where(bonding == element)[0][0], 2])*255)
-        rgb2 = int(float(bonding[np.where(bonding == element)[0][0], 3])*255)
-        rgb3 = int(float(bonding[np.where(bonding == element)[0][0], 4])*255)
-        Vesta.write(str(iter+1) + " " + element + " " + bonding[np.where(bonding == element)[0][0], 1] + " " + str(rgb1) + " " + str(rgb2) + " " + str(rgb3) + " " + str(rgb1) + " " + str(rgb2) + " " + str(rgb3) + " 204\n")
-        done_deal_atoms.append(element)
-    Vesta.write("0 0 0 0 0 0\n")
+    # Output a VESTA file to visualize the results
+    with open(f"{saveResults}_VESTA.vesta", 'w') as VESTA:
+        VESTA.write("VESTA  VESTA format\n")
+        VESTA.write("TITL  Molecule\n\n")
+        VESTA.write("! Model type\n")
+        VESTA.write("MODL  1\n\n")
+        VESTA.write("! Colour definitions:\n")
+        VESTA.write("TYPE\n")
 
-    Vesta.close()
-    
+        # Assign colors to all the atoms
+        for iter, element in enumerate(elements):
+            bonding_index = np.where(bonding == element)[0][0]
+            rgba = m.to_rgba(AtomContributionValues[iter])[:-1]
+            rgb = " ".join(map(str, rgba[:3]))
+            VESTA.write(f"{element}{iter+1} {bonding[bonding_index, 1]} {rgb}\n")
+
+        VESTA.write("\n! Atoms list\nATOM\n")
+
+        # Assign coordinates to the atoms
+        for iter, element in enumerate(elements):
+            VESTA.write(f"{element} {element}{iter+1} {' '.join(map(str, xyz[iter]))}\n")
+
     return None
 
 def prepare_folders(SaveResults):
