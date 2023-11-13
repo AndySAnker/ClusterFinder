@@ -4,10 +4,8 @@
 Cluster is a novel, automated, high throughput screening approach which can find candidate structures for atomic pair distribution function (PDF) structural refinements. Finding starting models for PDF refinements is notoriously difficult when the PDF originates from nanoclusters or small nanoparticles. ClusterFinder algorithm is able to screen 10<sup>4</sup> – 10<sup>5</sup> candidate structures from structural databases such as the Inorganic Crystal Structure Database (ICSD) in minutes, using the crystal structures as templates in which it looks for atomic clusters that result in a PDF similar to the target measured PDF. The algorithm returns a rank-ordered list of clusters for further assessment by the user. ClusterFinder has performed well for simulated and measured PDFs of metal oxido clusters such as Keggin clusters. The approach is therefore a powerful approach to finding structural cluster candidates in a modelling campaign for PDFs of nanoparticles and nanoclusters.
 
 1. [Installation](#installation)
-2. [Usage](#usage)
-    1. [Interactive mode](#interactive-mode-at-google-colab)
-    3. [Example usage](#example-usage)
-3. [High-level implementation details](#high-level-implementation-details)
+2. [Usage on a single starting template](#usage-on-a-single-starting-template)
+3. [Usage on a database of starting templates](#usageon-a-database-of-starting-templates)
 4. [Authors](#authors)
 5. [Cite](#cite)
 6. [Contributing to the software](#contributing-to-the-software)
