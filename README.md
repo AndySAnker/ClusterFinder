@@ -24,7 +24,15 @@ You will also need to install [DiffPy-CMI](https://www.diffpy.org/products/diffp
 
 # Usage on a single starting template
 
+See ClusterFinder.ipynb for an example of extracting a cluster from a starting template.
+
+The [Experimental_Data](https://github.com/AndySAnker/ClusterFinder/tree/main/Experimental_Data) folder and the [Structure_Model](https://github.com/AndySAnker/ClusterFinder/tree/main/Structure_Models) folder provides examples of experimental data and starting templates.
+
 # Usage on a database of starting templates
+
+See ClusterFinder-databasescreen.ipynb for an example of extracting clusters from a database of starting template.
+
+The [Experimental_Data](https://github.com/AndySAnker/ClusterFinder/tree/main/Experimental_Data) folder and the [Structure_Model](https://github.com/AndySAnker/ClusterFinder/tree/main/Structure_Models) folder provides examples of experimental data and starting templates. However, we are not allowed to distribute the entire database of CIFs.
 
 # Authors
 __Andy S. Anker__<sup>1</sup>   
