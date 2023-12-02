@@ -38,7 +38,7 @@ __Andy S. Anker__<sup>1</sup>
 <sup>1</sup> Department of Chemistry & Nano-Science Center, University of Copenhagen, Denmark
 
 Should there be any questions, desired improvements or bugs please contact us on GitHub or 
-through email: __andy@chem.ku.dk__.
+through email: __ansoan@dtu.dk__.
 
 # Cite
 If you use our code or our results, please consider citing our paper. Thanks in advance!
